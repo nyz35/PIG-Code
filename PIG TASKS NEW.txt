@@ -1,0 +1,100 @@
+Q1) Find all the transaction where amt>160.
+
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = FOREACH a generate uid, amt;
+c = FILTER b by amt>160;
+DUMP c;
+
+
+Q2) Count all the transaction where amount is between 175 to 200.
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = FOREACH a generate tid, amt, uid;
+c = FILTER b by amt >175;
+d = FILTER c by amt <200;
+e = FOREACH d generate 1 as one;
+f = GROUP e by one;
+h = FOREACH f generate COUNT(e.one);
+DUMP h;
+
+Q3) Calculate the total sum and total count of all the transaction for each user id.
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = FOREACH a generate tid, uid, amt;
+c = GROUP b by uid;
+d = FOREACH c GENERATE group, COUNT (b.tid), SUM(b.amt);
+DUMP d;
+
+Q4)  Calculate total sales amt for each Month.
+
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = FOREACH a generate tid, SUBSTRING(d,0,2) as month, amt;
+c = GROUP b by month;
+d = FOREACH c GENERATE group, SUM(b.amt);
+DUMP d;
+
+Q5) Divide the file into 12 files, each file containing each month of data. For eg. file 1 should contain data of january txn, file 2 should contain data of feb txn.
+
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = FOREACH a generate SUBSTRING(d,0,2) as month;
+c = GROUP b by month;
+d = filter c by group=='01';
+STORE a INTO '/user/cloudera/part-00001';
+d = filter c by group=='02';
+STORE a INTO '/user/cloudera/part-00002';
+d = filter c by group=='03';
+STORE a INTO '/user/cloudera/part-00003';
+d = filter c by group=='04';
+STORE a INTO '/user/cloudera/part-00004';
+d = filter c by group=='05';
+STORE a INTO '/user/cloudera/part-00005';
+d = filter c by group=='06';
+STORE a INTO '/user/cloudera/part-00006';
+d = filter c by group=='07';
+STORE a INTO '/user/cloudera/part-00007';
+d = filter c by group=='08';
+STORE a INTO '/user/cloudera/part-00008';
+d = filter c by group=='09';
+STORE a INTO '/user/cloudera/part-00009';
+d = filter c by group=='10';
+STORE a INTO '/user/cloudera/part-00010';
+d = filter c by group=='11';
+STORE a INTO '/user/cloudera/part-00011';
+d = filter c by group=='12';
+STORE a INTO '/user/cloudera/part-00012';
+
+
+
+Q6) Find the profession of user who has spend the maximum amount
+
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = LOAD '/user/cloudera/Customer.dat' using PigStorage (',') as (custid,fname,lname,age:double,prof);
+c = JOIN a by uid, b by custid;
+d = GROUP c by prof;
+e = FOREACH d GENERATE group, SUM(c.amt)as tamt;
+f = ORDER e by tamt desc;
+h = LIMIT f 1;
+dump h;
+
+Q7) Find the name of top 3 spenders.
+
+a = LOAD '/user/cloudera/txns-large.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = LOAD '/user/cloudera/Customer.dat' using PigStorage (',') as (custid,fname,lname,age:double,prof);
+c = JOIN a by uid, b by custid;
+d = GROUP c by fname;
+e = FOREACH d GENERATE group, SUM(c.amt)as tamt;
+f = ORDER e by tamt desc;
+h = LIMIT f 3;
+dump h;
+
+
+Q8) Find the user who has spend the max amount in July month
+
+a = LOAD '/user/cloudera/Transactional.dat' using PigStorage (',') as (tid, d, uid, amt:double, cat, prod, city, state, pt);
+b = LOAD '/user/cloudera/Customer.dat' using PigStorage (',') as (custid, fname, lname, age:double, prof);
+c = JOIN a by uid , b by custid;
+d = FOREACH c GENERATE fname, SUBSTRING(d,0,2) as mon, amt;
+e = FILTER d by mon=='07';
+f = GROUP e by fname;
+h = FOREACH f GENERATE group, SUM(e.amt) as tcnt;
+step8 = ORDER h by tcnt desc;
+step9 = LIMIT step8 1;
+dump step9;
